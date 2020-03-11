@@ -30,7 +30,7 @@ router.get("/", (req, res) => {
     });
 });
 
-router.get("/:id", (req, res) => {
+router.get("/:id", validateUserId, (req, res) => {
   const { id } = req.params;
   Users.getById(id)
     .then(user => {
@@ -42,8 +42,16 @@ router.get("/:id", (req, res) => {
     });
 });
 
-router.get("/:id/posts", (req, res) => {
-  // do your magic!
+router.get("/:id/posts", validateUserId, (req, res) => {
+  const { id } = req.params;
+  Users.getUserPosts(id)
+    .then(post => {
+      res.status(200).json(post);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ errorMessage: "Error retrieving posts" });
+    });
 });
 
 router.delete("/:id", (req, res) => {
@@ -60,7 +68,7 @@ function validateUserId(req, res, next) {
   const { id } = req.params;
   Users.getById(id)
     .then(user => {
-      if (id) {
+      if (user.id) {
         console.log(user);
         next();
       } else {
@@ -74,7 +82,14 @@ function validateUserId(req, res, next) {
 }
 
 function validateUser(req, res, next) {
-  // do your magic!
+  const { name } = req.body;
+  if (!req.body) {
+    res.status(400).json({ errorMessage: "Missing user data" });
+  } else if (!name) {
+    res.status(400).json({ errorMessage: "Missing required text field" });
+  } else {
+    next();
+  }
 }
 
 function validatePost(req, res, next) {
