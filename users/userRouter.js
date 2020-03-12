@@ -5,18 +5,18 @@ const Posts = require("../posts/postDb");
 
 const router = express.Router();
 
-router.post("/", (req, res) => {
-  Users.get()
+router.post("/", validateUser, (req, res) => {
+  Users.insert(req.body)
     .then(user => {
-      res.status(200).json(user);
+      res.status(201).json(user);
     })
     .catch(err => {
       console.log(err);
-      res.status(500).json({ errorMessage: "Error retrieving users" });
+      res.status(500).json({ errorMessage: "Error creating user" });
     });
 });
 
-router.post("/:id/posts", (req, res) => {
+router.post("/:id/posts", validatePost, (req, res) => {
   const { id } = req.params;
   const { text } = req.body;
   const newObj = {
@@ -69,11 +69,27 @@ router.get("/:id/posts", validateUserId, (req, res) => {
 });
 
 router.delete("/:id", (req, res) => {
-  // do your magic!
+  const { id } = req.params;
+  Users.remove(id)
+    .then(user => {
+      res.status(200).json(user);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ errorMessage: "Error deleting user" });
+    });
 });
 
 router.put("/:id", (req, res) => {
-  // do your magic!
+  const { id } = req.params;
+  Users.update(id, req.body)
+    .then(user => {
+      res.status(201).json(user);
+    })
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({ errorMessage: "Error updating user" });
+    });
 });
 
 //custom middleware
@@ -95,12 +111,21 @@ function validateUserId(req, res, next) {
     });
 }
 
-function validateUser(req, res, next) {}
+function validateUser(req, res, next) {
+  const { name } = req.body;
+  if (!req.body) {
+    res.status(400).json({ errorMessage: "Missing user data" });
+  } else if (!name) {
+    res.status(400).json({ errorMessage: "Missing required name field" });
+  } else {
+    next();
+  }
+}
 
 function validatePost(req, res, next) {
   const { text } = req.body;
   if (!req.body) {
-    res.status(400).json({ errorMessage: "Missing user data" });
+    res.status(400).json({ errorMessage: "Missing post data" });
   } else if (!text) {
     res.status(400).json({ errorMessage: "Missing required text field" });
   } else {
